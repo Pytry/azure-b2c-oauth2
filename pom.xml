@@ -80,7 +80,6 @@
                 <configuration>
                     <finalName>${project.artifactId}</finalName>
                     <executable>false</executable>
-                    <mainClass></mainClass>
                 </configuration>
             </plugin>
             <!-- By naming the war file in each plugin (boot and war), it ensures

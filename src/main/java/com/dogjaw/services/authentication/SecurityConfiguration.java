@@ -1,5 +1,6 @@
 package com.dogjaw.services.authentication;
 
+import com.dogjaw.services.authentication.tokens.AzureRequestEnhancer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoTokenServices;
@@ -15,7 +16,13 @@ import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.security.oauth2.client.filter.OAuth2ClientAuthenticationProcessingFilter;
 import org.springframework.security.oauth2.client.filter.OAuth2ClientContextFilter;
 import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResourceDetails;
+import org.springframework.security.oauth2.client.token.AccessTokenProvider;
+import org.springframework.security.oauth2.client.token.AccessTokenProviderChain;
+import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsAccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeAccessTokenProvider;
 import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
+import org.springframework.security.oauth2.client.token.grant.implicit.ImplicitAccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
@@ -26,6 +33,7 @@ import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.CompositeFilter;
@@ -40,10 +48,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Keith Hoopes on 2/1/2016.
@@ -56,6 +61,7 @@ import java.util.Map;
 @Order(6)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
+    @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
     OAuth2ClientContext oauth2ClientContext;
 
@@ -129,18 +135,19 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private Filter ssoFilter(ClientResources client, String path) {
 
-        OAuth2ClientAuthenticationProcessingFilter azureFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
+
         OAuth2RestTemplate azureTemplate = new OAuth2RestTemplate(
                 client.getClient(),
                 oauth2ClientContext
         );
+        azureTemplate.setAccessTokenProvider(client.getAccessTokenProvider());
 
         UserInfoTokenServices tokenServices = new UserInfoTokenServices(
                 client.getResource().getUserInfoUri(),
                 client.getClient().getClientId());
 
+        OAuth2ClientAuthenticationProcessingFilter azureFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
         azureFilter.setRestTemplate(azureTemplate);
-
         azureFilter.setTokenServices(tokenServices);
 
         return azureFilter;
@@ -180,8 +187,30 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 class ClientResources {
 
-    private OAuth2ProtectedResourceDetails client = new AuthorizationCodeResourceDetails();
-    private ResourceServerProperties resource = new ResourceServerProperties();
+    private OAuth2ProtectedResourceDetails client;
+    private ResourceServerProperties resource;
+    private AccessTokenProvider accessTokenProvider;
+
+    public ClientResources(){
+
+        client = new AuthorizationCodeResourceDetails();
+        resource = new ResourceServerProperties();
+
+        AuthorizationCodeAccessTokenProvider authorizationCodeAccessTokenProvider = new AuthorizationCodeAccessTokenProvider();
+        authorizationCodeAccessTokenProvider.setTokenRequestEnhancer(new AzureRequestEnhancer());
+
+        ImplicitAccessTokenProvider implicitAccessTokenProvider = new ImplicitAccessTokenProvider();
+        ResourceOwnerPasswordAccessTokenProvider resourceOwnerPasswordAccessTokenProvider = new ResourceOwnerPasswordAccessTokenProvider();
+        ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
+
+        accessTokenProvider = new AccessTokenProviderChain(Arrays.<AccessTokenProvider> asList(
+                authorizationCodeAccessTokenProvider,
+                implicitAccessTokenProvider,
+                resourceOwnerPasswordAccessTokenProvider,
+                clientCredentialsAccessTokenProvider));
+
+
+    }
 
     public OAuth2ProtectedResourceDetails getClient() {
         return client;
@@ -190,4 +219,9 @@ class ClientResources {
     public ResourceServerProperties getResource() {
         return resource;
     }
+
+    public AccessTokenProvider getAccessTokenProvider(){
+        return accessTokenProvider;
+    }
+
 }
