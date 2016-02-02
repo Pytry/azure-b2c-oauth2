@@ -1,11 +1,3 @@
-#server:
-#  ssl:
-#    key-store: D:\ssl_certs\.keystore
-#    key-store-password: changeit
-#    key-password: changeit
-
-
-
 security:
   oauth2:
     client:
@@ -14,24 +6,24 @@ security:
       scope: read,write
       auto-approve-scopes: '.*'
 
-#Note: I'm not sure if all of these values are set properly or not.
+# Note: I'm not sure if all of these values are set properly or not.
 # It seems that some values are being ignored.
 azure:
   client:
-    accessTokenUri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/token?p=B2C_1_b2c_1_sign_in
+    accessTokenUri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/token?p=application.yml
     authenticationScheme: query
     clientAuthenticationScheme: query
     clientId: ThisShouldBeTheAzure_ApplicationClientId
     clientSecret: ThisShouldBeTheAzure_AppKey
     grant-type: authorization_code
     pre-established-redirect-uri: https://localhost:8443/login/azure
-    redirect-url: https://localhost:8443
-    response_type: code
-    response_mode: form_post
-    state: random_value_with_session_information_encoded
+    redirect-url: https://localhost:8443/login/azure
+#    response_type: code+id_token
+#    response_mode: form_post
+#    state: random_value_with_session_information_encoded
     scope: openId offline_access
     tokenName: code
-    user-authorization-uri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/authorize?p=B2C_1_b2c_1_sign_in
+    user-authorization-uri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/authorize?p=thenamefullnameofthesigninpolicy
 
   resource:
     userInfoUri: https://graph.windows.net/replacethiswithyourcustomername.onmicrosoft.com/users
