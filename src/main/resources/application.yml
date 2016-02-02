@@ -1,11 +1,3 @@
-#server:
-#  ssl:
-#    key-store: D:\ssl_certs\.keystore
-#    key-store-password: changeit
-#    key-password: changeit
-
-
-
 security:
   oauth2:
     client:
