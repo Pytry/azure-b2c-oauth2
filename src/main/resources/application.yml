@@ -10,7 +10,7 @@ security:
 # It seems that some values are being ignored.
 azure:
   client:
-    accessTokenUri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/token?p=application.yml
+    accessTokenUri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/token?p=thenamefullnameofthesigninpolicy
     authenticationScheme: query
     clientAuthenticationScheme: query
     clientId: ThisShouldBeTheAzure_ApplicationClientId
