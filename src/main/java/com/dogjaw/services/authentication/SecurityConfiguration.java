@@ -1,5 +1,7 @@
 package com.dogjaw.services.authentication;
 
+import com.dogjaw.services.authentication.logging.AuthorizationLoggingIntercepter;
+import com.dogjaw.services.authentication.tokens.AzureIdTokenProvider;
 import com.dogjaw.services.authentication.tokens.AzureRequestEnhancer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
@@ -19,7 +21,6 @@ import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResour
 import org.springframework.security.oauth2.client.token.AccessTokenProvider;
 import org.springframework.security.oauth2.client.token.AccessTokenProviderChain;
 import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsAccessTokenProvider;
-import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeAccessTokenProvider;
 import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
 import org.springframework.security.oauth2.client.token.grant.implicit.ImplicitAccessTokenProvider;
 import org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider;
@@ -33,7 +34,6 @@ import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.CompositeFilter;
@@ -141,10 +141,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 oauth2ClientContext
         );
         azureTemplate.setAccessTokenProvider(client.getAccessTokenProvider());
+        azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
 
         UserInfoTokenServices tokenServices = new UserInfoTokenServices(
                 client.getResource().getUserInfoUri(),
                 client.getClient().getClientId());
+
 
         OAuth2ClientAuthenticationProcessingFilter azureFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
         azureFilter.setRestTemplate(azureTemplate);
@@ -191,25 +193,22 @@ class ClientResources {
     private ResourceServerProperties resource;
     private AccessTokenProvider accessTokenProvider;
 
-    public ClientResources(){
+    public ClientResources() {
 
         client = new AuthorizationCodeResourceDetails();
         resource = new ResourceServerProperties();
 
-        AuthorizationCodeAccessTokenProvider authorizationCodeAccessTokenProvider = new AuthorizationCodeAccessTokenProvider();
+        ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
+        ResourceOwnerPasswordAccessTokenProvider resourceOwnerPasswordAccessTokenProvider = new ResourceOwnerPasswordAccessTokenProvider();
+        ImplicitAccessTokenProvider implicitAccessTokenProvider = new ImplicitAccessTokenProvider();
+        AzureIdTokenProvider authorizationCodeAccessTokenProvider = new AzureIdTokenProvider();
         authorizationCodeAccessTokenProvider.setTokenRequestEnhancer(new AzureRequestEnhancer());
 
-        ImplicitAccessTokenProvider implicitAccessTokenProvider = new ImplicitAccessTokenProvider();
-        ResourceOwnerPasswordAccessTokenProvider resourceOwnerPasswordAccessTokenProvider = new ResourceOwnerPasswordAccessTokenProvider();
-        ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
-
-        accessTokenProvider = new AccessTokenProviderChain(Arrays.<AccessTokenProvider> asList(
+        accessTokenProvider = new AccessTokenProviderChain(Arrays.<AccessTokenProvider>asList(
                 authorizationCodeAccessTokenProvider,
                 implicitAccessTokenProvider,
                 resourceOwnerPasswordAccessTokenProvider,
                 clientCredentialsAccessTokenProvider));
-
-
     }
 
     public OAuth2ProtectedResourceDetails getClient() {
@@ -220,8 +219,7 @@ class ClientResources {
         return resource;
     }
 
-    public AccessTokenProvider getAccessTokenProvider(){
+    public AccessTokenProvider getAccessTokenProvider() {
         return accessTokenProvider;
     }
-
 }
