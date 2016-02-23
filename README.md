@@ -1,4 +1,4 @@
-#General
+###General
 
 This project is based of off the Spring Tutorial for using OAuth2.
 
@@ -15,3 +15,11 @@ Although authentication has been performed successfully, the parsing of the
 JWT token ("id_token") for use by Spring Security still needs to be done.
 
 Any suggestions, help, and contributions will be appreciated.
+
+### Azure Documentation and Resources
+
+- **Main Documentation:** https://azure.microsoft.com/en-us/documentation/services/active-directory-b2c/
+- **OpenId Connect:** https://azure.microsoft.com/en-us/documentation/articles/active-directory-b2c-reference-oidc/
+- **OAuth2:** https://azure.microsoft.com/en-us/documentation/articles/active-directory-b2c-reference-oauth-code/
+- **Policies:** https://github.com/Azure/azure-content/blob/master/articles/active-directory-b2c/active-directory-b2c-reference-policies.md
+
