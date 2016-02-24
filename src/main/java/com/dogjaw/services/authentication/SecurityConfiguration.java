@@ -28,6 +28,8 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
@@ -136,8 +138,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private Filter ssoFilter(ClientResources client, String path) {
 
 
+        OAuth2ProtectedResourceDetails clientResources = client.getClient();
         OAuth2RestTemplate azureTemplate = new OAuth2RestTemplate(
-                client.getClient(),
+                clientResources,
                 oauth2ClientContext
         );
         azureTemplate.setAccessTokenProvider(client.getAccessTokenProvider());
@@ -147,6 +150,24 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 client.getResource().getUserInfoUri(),
                 client.getClient().getClientId());
 
+        JwtTokenStore jwtTokenStore = new JwtTokenStore(new JwtAccessTokenConverter());
+
+//        DefaultTokenServices tokenServices = new DefaultTokenServices();
+//        tokenServices.setTokenStore(jwtTokenStore);
+
+//        RemoteTokenServices tokenServices = new RemoteTokenServices();
+
+//        InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
+//        Map<String, ClientDetails> detailsStore = new HashMap<>();
+//        detailsStore.put(clientResources.getClientId(),clientResources)
+//        clientDetailsService.setClientDetailsStore();
+//        tokenServices.setClientDetailsService(clientDetailsService);
+//
+//        tokenServices.setClientSecret(clientResources.getClientSecret());
+//        tokenServices.setTokenName(clientResources.getTokenName());
+//        tokenServices.setCheckTokenEndpointUrl(clientResources.getAccessTokenUri());
+
+        tokenServices.setRestTemplate(azureTemplate);
 
         OAuth2ClientAuthenticationProcessingFilter azureFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
         azureFilter.setRestTemplate(azureTemplate);
