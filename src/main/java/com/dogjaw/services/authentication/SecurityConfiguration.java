@@ -2,10 +2,9 @@ package com.dogjaw.services.authentication;
 
 import com.dogjaw.services.authentication.logging.AuthorizationLoggingIntercepter;
 import com.dogjaw.services.authentication.tokens.AzureIdTokenProvider;
+import com.dogjaw.services.authentication.tokens.AzurePolicy;
 import com.dogjaw.services.authentication.tokens.AzureRequestEnhancer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoTokenServices;
 import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +27,8 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.provider.client.InMemoryClientDetailsService;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
@@ -77,97 +78,98 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        // @formatter:off
+
         http.antMatcher("/**")
                 .authorizeRequests()
                 .antMatchers("/", "/login**", "/webjars/**").permitAll()
                 .anyRequest().authenticated()
-                .and().exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/"))
-                .and().logout().logoutSuccessUrl("/").permitAll()
-                .and().csrf().csrfTokenRepository(csrfTokenRepository())
-                .and().addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
+                .and()
+                .exceptionHandling()
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/"))
+                .and()
+                .logout().logoutSuccessUrl("/").permitAll()
+                .and()
+                .csrf().csrfTokenRepository(csrfTokenRepository())
+                .and()
+                .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
                 .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
-        // @formatter:on
     }
 
     @Configuration
     @EnableResourceServer
-    protected static class ResourceServerConfiguration
-            extends ResourceServerConfigurerAdapter {
+    protected static class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
+
         @Override
         public void configure(HttpSecurity http) throws Exception {
-            // @formatter:off
+
             http
                     .antMatcher("/me")
                     .authorizeRequests().anyRequest().authenticated();
-            // @formatter:on
         }
     }
 
     @Bean
-    public FilterRegistrationBean oauth2ClientFilterRegistration(
-            OAuth2ClientContextFilter filter) {
+    public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
+
         FilterRegistrationBean registration = new FilterRegistrationBean();
         registration.setFilter(filter);
         registration.setOrder(-100);
+
         return registration;
     }
 
     @Bean
     @ConfigurationProperties("github")
     ClientResources github() {
+
         return new ClientResources();
     }
 
     @Bean
     @ConfigurationProperties("azure")
     ClientResources azure() {
+
         return new ClientResources();
     }
 
-    private Filter ssoFilter() {
+
+    private Filter ssoFilter() throws Exception {
 
         CompositeFilter filter = new CompositeFilter();
+
         List<Filter> filters = new ArrayList<>();
-        filters.add(ssoFilter(azure(), "/login/azure"));
-        filters.add(ssoFilter(github(), "/login/github"));
+        filters.add(ssoFilter("/login/azure"));
         filter.setFilters(filters);
+
         return filter;
     }
 
-    private Filter ssoFilter(ClientResources client, String path) {
+    private Filter ssoFilter(String path) throws Exception {
 
+        ClientResources clientResources = azure();
+        OAuth2ProtectedResourceDetails client = clientResources.getClient();
+        AccessTokenProvider accessTokenProvider = clientResources.getAccessTokenProvider();
+        AzurePolicy policy = clientResources.getPolicy();
 
-        OAuth2ProtectedResourceDetails clientResources = client.getClient();
         OAuth2RestTemplate azureTemplate = new OAuth2RestTemplate(
-                clientResources,
+                client,
                 oauth2ClientContext
         );
-        azureTemplate.setAccessTokenProvider(client.getAccessTokenProvider());
+        azureTemplate.setAccessTokenProvider(accessTokenProvider);
         azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
 
-        UserInfoTokenServices tokenServices = new UserInfoTokenServices(
-                client.getResource().getUserInfoUri(),
-                client.getClient().getClientId());
+        JwtAccessTokenConverter jwtTokenEnhancer = new JwtAccessTokenConverter();
+        String signinPolicy = policy.getSigninPolicy();
+        jwtTokenEnhancer.setVerifierKey(signinPolicy);
+        jwtTokenEnhancer.setSigningKey(signinPolicy);
 
-        JwtTokenStore jwtTokenStore = new JwtTokenStore(new JwtAccessTokenConverter());
+        jwtTokenEnhancer.afterPropertiesSet();
 
-//        DefaultTokenServices tokenServices = new DefaultTokenServices();
-//        tokenServices.setTokenStore(jwtTokenStore);
+        JwtTokenStore tokenStore =  new JwtTokenStore(jwtTokenEnhancer);
 
-//        RemoteTokenServices tokenServices = new RemoteTokenServices();
-
-//        InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
-//        Map<String, ClientDetails> detailsStore = new HashMap<>();
-//        detailsStore.put(clientResources.getClientId(),clientResources)
-//        clientDetailsService.setClientDetailsStore();
-//        tokenServices.setClientDetailsService(clientDetailsService);
-//
-//        tokenServices.setClientSecret(clientResources.getClientSecret());
-//        tokenServices.setTokenName(clientResources.getTokenName());
-//        tokenServices.setCheckTokenEndpointUrl(clientResources.getAccessTokenUri());
-
-        tokenServices.setRestTemplate(azureTemplate);
+        DefaultTokenServices tokenServices = new DefaultTokenServices();
+        tokenServices.setTokenStore(tokenStore);
+        tokenServices.setClientDetailsService(new InMemoryClientDetailsService());
 
         OAuth2ClientAuthenticationProcessingFilter azureFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
         azureFilter.setRestTemplate(azureTemplate);
@@ -201,8 +203,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     private CsrfTokenRepository csrfTokenRepository() {
+
         HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
         repository.setHeaderName("X-XSRF-TOKEN");
+
         return repository;
     }
 
@@ -211,13 +215,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 class ClientResources {
 
     private OAuth2ProtectedResourceDetails client;
-    private ResourceServerProperties resource;
+    //    private ResourceServerProperties resource;
     private AccessTokenProvider accessTokenProvider;
+
+    private AzurePolicy policy;
 
     public ClientResources() {
 
         client = new AuthorizationCodeResourceDetails();
-        resource = new ResourceServerProperties();
+//        resource = new ResourceServerProperties();
+        policy = new AzurePolicy();
 
         ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
         ResourceOwnerPasswordAccessTokenProvider resourceOwnerPasswordAccessTokenProvider = new ResourceOwnerPasswordAccessTokenProvider();
@@ -236,11 +243,15 @@ class ClientResources {
         return client;
     }
 
-    public ResourceServerProperties getResource() {
-        return resource;
-    }
+//    public ResourceServerProperties getResource() {
+//        return resource;
+//    }
 
     public AccessTokenProvider getAccessTokenProvider() {
         return accessTokenProvider;
+    }
+
+    public AzurePolicy getPolicy() {
+        return policy;
     }
 }

@@ -89,7 +89,7 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
             String profile64Encoded = (String) info.get("profile_info");
             byte[] profileBytes = Base64.decode(profile64Encoded.getBytes());
             String profileJson = new String(profileBytes);
-            //Change this to a Map or a USerObject?
+            //Change this to a Map or a UserObject?
             this.profileInfo = profileJson;
 
         }

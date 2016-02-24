@@ -6,16 +6,18 @@ import org.springframework.security.oauth2.client.token.AccessTokenRequest;
 import org.springframework.security.oauth2.client.token.DefaultRequestEnhancer;
 import org.springframework.util.MultiValueMap;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Keith Hoopes on 2/2/2016.
  * Copyright Bear River Mutual 2016.
  */
 public class AzureRequestEnhancer extends DefaultRequestEnhancer {
+
+    private String signinPolicy;
+    private String signUpPolicy;
+    private String userDetailsPolicy;
 
     @Override
     public void enhance(AccessTokenRequest request, OAuth2ProtectedResourceDetails resource, MultiValueMap<String, String> form, HttpHeaders headers) {
@@ -37,5 +39,31 @@ public class AzureRequestEnhancer extends DefaultRequestEnhancer {
         form.set("client_secret", resource.getClientSecret());
 
         headers.put("Content-Type", Collections.singletonList("application/json"));
+    }
+
+    public String getSigninPolicy() {
+
+        return signinPolicy;
+    }
+
+    public void setSigninPolicy(String signinPolicy) {
+
+        this.signinPolicy = signinPolicy;
+    }
+
+    public String getSignUpPolicy() {
+        return signUpPolicy;
+    }
+
+    public void setSignUpPolicy(String signUpPolicy) {
+        this.signUpPolicy = signUpPolicy;
+    }
+
+    public String getUserDetailsPolicy() {
+        return userDetailsPolicy;
+    }
+
+    public void setUserDetailsPolicy(String userDetailsPolicy) {
+        this.userDetailsPolicy = userDetailsPolicy;
     }
 }
