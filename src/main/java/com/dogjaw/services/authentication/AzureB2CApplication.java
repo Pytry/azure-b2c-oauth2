@@ -18,6 +18,7 @@ package com.dogjaw.services.authentication;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
+import org.springframework.context.annotation.ComponentScan;
 
 /**
  * Since this is running as a non-executable war file, we must provide a
@@ -27,6 +28,7 @@ import org.springframework.boot.context.web.SpringBootServletInitializer;
  * that meant I had to have a separate main "SpringBootApplication" configuration.
  */
 @SpringBootApplication
+@ComponentScan("com.dogjaw.services.authentication")
 public class AzureB2CApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) {

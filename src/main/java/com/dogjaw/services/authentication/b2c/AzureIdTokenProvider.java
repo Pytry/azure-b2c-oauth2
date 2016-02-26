@@ -1,4 +1,4 @@
-package com.dogjaw.services.authentication.tokens;
+package com.dogjaw.services.authentication.b2c;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.client.resource.OAuth2AccessDeniedException;
@@ -6,14 +6,14 @@ import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResour
 import org.springframework.security.oauth2.client.resource.UserApprovalRequiredException;
 import org.springframework.security.oauth2.client.resource.UserRedirectRequiredException;
 import org.springframework.security.oauth2.client.token.AccessTokenRequest;
-import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeAccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsAccessTokenProvider;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 
 /**
  * Created by Keith Hoopes on 2/3/2016.
  * Copyright Bear River Mutual 2016.
  */
-public class AzureIdTokenProvider extends AuthorizationCodeAccessTokenProvider {
+public class AzureIdTokenProvider extends ClientCredentialsAccessTokenProvider {
 
     @Override
     public OAuth2AccessToken obtainAccessToken(OAuth2ProtectedResourceDetails details, AccessTokenRequest request) throws UserRedirectRequiredException, UserApprovalRequiredException, AccessDeniedException, OAuth2AccessDeniedException {

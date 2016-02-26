@@ -1,4 +1,4 @@
-package com.dogjaw.services.authentication.tokens;
+package com.dogjaw.services.authentication.b2c;
 
 import org.springframework.security.jwt.crypto.sign.SignatureVerifier;
 

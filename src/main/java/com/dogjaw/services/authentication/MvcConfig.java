@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * I'm actually not sure if I need this.
  *
  * I was getting some redirect errors for
- * /login/azure, so I added this manual configuration.
+ * /login/b2c, so I added this manual configuration.
  *
  * Some things have changed since then, so maybe
  * I'll try to take this out.

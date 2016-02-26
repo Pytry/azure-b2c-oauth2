@@ -1,16 +1,25 @@
 package com.dogjaw.services.authentication;
 
+import com.dogjaw.services.authentication.b2c.*;
 import com.dogjaw.services.authentication.logging.AuthorizationLoggingIntercepter;
-import com.dogjaw.services.authentication.tokens.AzureIdTokenProvider;
-import com.dogjaw.services.authentication.tokens.AzurePolicy;
-import com.dogjaw.services.authentication.tokens.AzureRequestEnhancer;
+import com.dogjaw.services.authentication.logging.LoggingRequestInterceptor;
+import com.dogjaw.services.authentication.services.RsaKeyCachingService;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.hateoas.hal.Jackson2HalModule;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.client.OAuth2ClientContext;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
@@ -20,13 +29,13 @@ import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResour
 import org.springframework.security.oauth2.client.token.AccessTokenProvider;
 import org.springframework.security.oauth2.client.token.AccessTokenProviderChain;
 import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsAccessTokenProvider;
-import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
-import org.springframework.security.oauth2.client.token.grant.implicit.ImplicitAccessTokenProvider;
-import org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.provider.ClientDetails;
+import org.springframework.security.oauth2.provider.ClientDetailsService;
+import org.springframework.security.oauth2.provider.client.BaseClientDetails;
 import org.springframework.security.oauth2.provider.client.InMemoryClientDetailsService;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
@@ -39,9 +48,11 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.CompositeFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
+import sun.security.rsa.RSAPublicKeyImpl;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -50,7 +61,9 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.Principal;
+import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 
 /**
@@ -60,7 +73,7 @@ import java.util.*;
 @RestController
 @Configuration
 @EnableOAuth2Client
-@EnableAuthorizationServer
+@EnableWebSecurity
 @Order(6)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
@@ -79,18 +92,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        http.antMatcher("/**")
-                .authorizeRequests()
-                .antMatchers("/", "/login**", "/webjars/**").permitAll()
+        http
+                .antMatcher("/**").authorizeRequests()
                 .anyRequest().authenticated()
-                .and()
+                .antMatchers("/", "/login**", "/webjars/**").permitAll().and()
                 .exceptionHandling()
-                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/"))
-                .and()
-                .logout().logoutSuccessUrl("/").permitAll()
-                .and()
-                .csrf().csrfTokenRepository(csrfTokenRepository())
-                .and()
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/")).and()
+                .logout().logoutSuccessUrl("/").permitAll().and()
+                .csrf().csrfTokenRepository(csrfTokenRepository()).and()
                 .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
                 .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
     }
@@ -108,7 +117,49 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         }
     }
 
-    @Bean
+    private static final int TIMEOUT = 30000;
+
+    @Bean(name = "jsonHttpHeaders")
+    HttpHeaders jsonHttpHeaders(){
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        headers.add("Accept", "application/json");
+
+        return headers;
+    }
+
+    @Bean(name="commonRestTemplate")
+    RestTemplate commonRestTemplate(){
+
+        RestTemplate restTemplate = new RestTemplate(new SimpleClientHttpRequestFactory());
+        restTemplate.getInterceptors().add(new LoggingRequestInterceptor());
+//        restTemplate.setMessageConverters(Collections.<HttpMessageConverter<?>> singletonList(httpMessageConverter()));
+
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(TIMEOUT);
+        requestFactory.setReadTimeout(TIMEOUT);
+
+        restTemplate.setRequestFactory(requestFactory);
+
+        return restTemplate;
+    }
+
+    @Bean(name="mappingJackson2HttpMessageConverter")
+    MappingJackson2HttpMessageConverter httpMessageConverter(){
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(new Jackson2HalModule());
+
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+        converter.setSupportedMediaTypes(MediaType.parseMediaTypes("application/hal+json,application/json"));
+        converter.setObjectMapper(mapper);
+
+        return converter;
+    }
+    @Bean(name="oauth2ClientFilterRegistration")
+    @Autowired
     public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
 
         FilterRegistrationBean registration = new FilterRegistrationBean();
@@ -118,21 +169,73 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return registration;
     }
 
-    @Bean
-    @ConfigurationProperties("github")
-    ClientResources github() {
+    @Bean(name="azurePolicyConfiguration")
+    @ConfigurationProperties("azure.policy")
+    AzurePolicyConfiguration azurePolicyConfiguration() {
 
-        return new ClientResources();
+        return new AzurePolicyConfiguration();
     }
 
-    @Bean
-    @ConfigurationProperties("azure")
-    ClientResources azure() {
+    @Bean(name="clientDetails")
+    @ConfigurationProperties("azure.client")
+    ClientDetails clientDetails(){
 
-        return new ClientResources();
+        return new BaseClientDetails();
     }
 
+    @Bean(name="oAuth2ProtectedResourceDetails")
+    @ConfigurationProperties("azure.client")
+    public OAuth2ProtectedResourceDetails oAuth2ProtectedResourceDetails(){
 
+        return new ClientCredentialsResourceDetails();
+    }
+
+    @Bean(name="accessTokenProvider")
+    public AccessTokenProvider accessTokenProvider() {
+
+
+        ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
+        AzureIdTokenProvider authorizationCodeAccessTokenProvider = new AzureIdTokenProvider();
+        authorizationCodeAccessTokenProvider.setTokenRequestEnhancer(new AzureRequestEnhancer());
+
+        return new AccessTokenProviderChain(Collections.<AccessTokenProvider>singletonList(
+                clientCredentialsAccessTokenProvider));
+    }
+
+    @Bean(name="metaDataClient")
+    MetaDataClient metaDataClient(){
+
+        MetaDataClient metaDataClient = new MetaDataClient();
+        metaDataClient.setJsonHttpHeaders(jsonHttpHeaders());
+        metaDataClient.setPolicy(azurePolicyConfiguration());
+        metaDataClient.setRestTemplate(commonRestTemplate());
+
+        return metaDataClient;
+    }
+
+    @Bean(name="rsaKeyClient")
+    RsaKeyClient rsaKeyClient(){
+
+        RsaKeyClient rsaKeyClient = new RsaKeyClient();
+        rsaKeyClient.setJsonHttpHeaders(jsonHttpHeaders());
+        rsaKeyClient.setMetaDataClient(metaDataClient());
+        rsaKeyClient.setRestTemplate(commonRestTemplate());
+        rsaKeyClient.setPolicy(azurePolicyConfiguration());
+
+        return rsaKeyClient;
+    }
+
+    @Bean(name="clientDetailsService")
+    ClientDetailsService clientDetailsService(){
+
+        ClientDetails details = clientDetails();
+        InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
+        Map<String, ClientDetails> detailsMap = new HashMap<>(1);
+        detailsMap.put(details.getClientId(),details);
+        clientDetailsService.setClientDetailsStore(detailsMap);
+
+        return clientDetailsService;
+    }
     private Filter ssoFilter() throws Exception {
 
         CompositeFilter filter = new CompositeFilter();
@@ -144,32 +247,49 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return filter;
     }
 
+    @Bean(name="jwtAccessTokenConverter")
+    JwtAccessTokenConverter jwtAccessTokenConverter() throws InvalidKeyException, IOException {
+
+        AzureRsaKeys rsaKey = rsaKeyCachingService.getSigninRsaKey();
+        RsaKeyB2C rsaKeyB2C = rsaKey.getKeys().get(0);
+//        AzurePolicyMetaData metaData = metaDataClient().getSigninMetaData();
+//
+//        BigInteger modulus = new BigInteger(rsaKeyB2C.getN());
+//        BigInteger privateExponent = new BigInteger(rsaKeyB2C.getE());
+//        RSAPrivateKeySpec rsaPrivateCrtKeySpec = new RSAPrivateKeySpec(
+//                modulus, privateExponent
+//        );
+//        String clientSecret = oAuth2ProtectedResourceDetails().getClientSecret();
+//        jwtTokenEnhancer.setVerifierKey(clientSecret);
+//        jwtTokenEnhancer.setSigningKey(clientSecret);
+        AzureJwtAccessTokenConverter azureJwtAccessTokenConverter = new AzureJwtAccessTokenConverter();
+
+        RSAPublicKey rsaPublicKey = new RSAPublicKeyImpl(rsaKeyB2C.getE().getBytes());
+        azureJwtAccessTokenConverter.setVerifierKey(new String(rsaPublicKey.getEncoded()));
+        return azureJwtAccessTokenConverter;
+    }
+
+    @Autowired
+    private RsaKeyCachingService rsaKeyCachingService;
+
     private Filter ssoFilter(String path) throws Exception {
 
-        ClientResources clientResources = azure();
-        OAuth2ProtectedResourceDetails client = clientResources.getClient();
-        AccessTokenProvider accessTokenProvider = clientResources.getAccessTokenProvider();
-        AzurePolicy policy = clientResources.getPolicy();
 
-        OAuth2RestTemplate azureTemplate = new OAuth2RestTemplate(
-                client,
-                oauth2ClientContext
-        );
-        azureTemplate.setAccessTokenProvider(accessTokenProvider);
-        azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
-
-        JwtAccessTokenConverter jwtTokenEnhancer = new JwtAccessTokenConverter();
-        String signinPolicy = policy.getSigninPolicy();
-        jwtTokenEnhancer.setVerifierKey(signinPolicy);
-        jwtTokenEnhancer.setSigningKey(signinPolicy);
-
-        jwtTokenEnhancer.afterPropertiesSet();
-
-        JwtTokenStore tokenStore =  new JwtTokenStore(jwtTokenEnhancer);
+        JwtAccessTokenConverter jwtTokenEnhancer = jwtAccessTokenConverter();
+        JwtTokenStore jwtTokenStore = new JwtTokenStore(jwtTokenEnhancer);
+        InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
 
         DefaultTokenServices tokenServices = new DefaultTokenServices();
-        tokenServices.setTokenStore(tokenStore);
-        tokenServices.setClientDetailsService(new InMemoryClientDetailsService());
+        tokenServices.setTokenStore(jwtTokenStore);
+        tokenServices.setClientDetailsService(clientDetailsService);
+        tokenServices.afterPropertiesSet();
+
+        OAuth2RestTemplate azureTemplate = new OAuth2RestTemplate(
+                oAuth2ProtectedResourceDetails(),
+                oauth2ClientContext
+        );
+        azureTemplate.setAccessTokenProvider(accessTokenProvider());
+        azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
 
         OAuth2ClientAuthenticationProcessingFilter azureFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
         azureFilter.setRestTemplate(azureTemplate);
@@ -210,48 +330,4 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return repository;
     }
 
-}
-
-class ClientResources {
-
-    private OAuth2ProtectedResourceDetails client;
-    //    private ResourceServerProperties resource;
-    private AccessTokenProvider accessTokenProvider;
-
-    private AzurePolicy policy;
-
-    public ClientResources() {
-
-        client = new AuthorizationCodeResourceDetails();
-//        resource = new ResourceServerProperties();
-        policy = new AzurePolicy();
-
-        ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
-        ResourceOwnerPasswordAccessTokenProvider resourceOwnerPasswordAccessTokenProvider = new ResourceOwnerPasswordAccessTokenProvider();
-        ImplicitAccessTokenProvider implicitAccessTokenProvider = new ImplicitAccessTokenProvider();
-        AzureIdTokenProvider authorizationCodeAccessTokenProvider = new AzureIdTokenProvider();
-        authorizationCodeAccessTokenProvider.setTokenRequestEnhancer(new AzureRequestEnhancer());
-
-        accessTokenProvider = new AccessTokenProviderChain(Arrays.<AccessTokenProvider>asList(
-                authorizationCodeAccessTokenProvider,
-                implicitAccessTokenProvider,
-                resourceOwnerPasswordAccessTokenProvider,
-                clientCredentialsAccessTokenProvider));
-    }
-
-    public OAuth2ProtectedResourceDetails getClient() {
-        return client;
-    }
-
-//    public ResourceServerProperties getResource() {
-//        return resource;
-//    }
-
-    public AccessTokenProvider getAccessTokenProvider() {
-        return accessTokenProvider;
-    }
-
-    public AzurePolicy getPolicy() {
-        return policy;
-    }
 }

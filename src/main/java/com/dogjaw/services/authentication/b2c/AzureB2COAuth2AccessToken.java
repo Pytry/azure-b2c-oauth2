@@ -1,4 +1,4 @@
-package com.dogjaw.services.authentication.tokens;
+package com.dogjaw.services.authentication.b2c;
 
 import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
