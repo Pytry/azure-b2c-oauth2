@@ -1,49 +1,42 @@
 security:
   oauth2:
-    client:
-      client-id: acme
-      client-secret: acmesecret
-      scope: read,write
-      auto-approve-scopes: '.*'
 
-# Note: I'm not sure if all of these values are set properly or not.
-# It seems that some values are being ignored.
-azure:
-  client:
-    accessTokenUri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/token?p=thenamefullnameofthesigninpolicy
-    authenticationScheme: query
-    clientAuthenticationScheme: query
-    clientId: ThisShouldBeTheAzure_ApplicationClientId
-    clientSecret: ThisShouldBeTheAzure_AppKey
-    grant-type: authorization_code
-    pre-established-redirect-uri: https://localhost:8443/login/azure
-    redirect-url: https://localhost:8443/login/azure
-#    response_type: code+id_token
-#    response_mode: form_post
-#    state: random_value_with_session_information_encoded
-    scope: openId offline_access
-    tokenName: code
-    user-authorization-uri: https://login.microsoftonline.com/replacethiswithyourcustomername.onmicrosoft.com/oauth2/v2.0/authorize?p=thenamefullnameofthesigninpolicy
-
-  resource:
-    userInfoUri: https://graph.windows.net/replacethiswithyourcustomername.onmicrosoft.com/users
-
-github:
-  client:
-    clientId: bd1c0a783ccdd1c9b9e4
-    clientSecret: 1a9030fbca47a5b2c28e92f19050bb77824b5ad1
-    accessTokenUri: https://github.com/login/oauth/access_token
-    userAuthorizationUri: https://github.com/login/oauth/authorize
-    clientAuthenticationScheme: form
-  resource:
-    userInfoUri: https://api.github.com/user
+    resource:
+      user-info-uri: https://graph.windows.net/yourcustomername.onmicrosoft.com/user?api-version=beta
+      token-info-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=${azure.policy.signin-policy}
+      jwt:
+        key-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/discovery/v2.0/keys?p=${azure.policy.signin-policy}
 
 logging:
   level:
     org.springframework.security: DEBUG
-
 spring:
   resources:
     chain:
       enabled: true
+azure:
+  #Custom Values for Azure B2C policies
+  policy:
+    wellknown-url: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/v2.0/.well-known/openid-configuration
+    signin-policy: your_signin_policy
+    signup-policy: your_signup_policy
+    edit-profile-policy: edit_policy
+    #store Rsa keys in a directory. Should end with '/'.
+    #Refresh every morning at 5
+    refresh-cron: 0 5 * * * *
 
+  client:
+    access-token-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/oauth2/v2.0/token?p=${azure.policy.signin-policy}
+    authentication-scheme: query
+    client-athentication-scheme: query
+    client-id: your_client)id
+    client-secret: your_client)secret
+    pre-established-redirect-uri: https://localhost:8443/login/azure
+    redirect-url: https://localhost:8443/login/azure
+#    response_type: code id_token
+#    response_mode: form_post
+#    state: random_value_with_session_information_encoded
+    scope: openId
+    token-name: id_token
+    grant_type: authorization_code
+    user-authorization-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/oauth2/v2.0/authorize?p=${azure.policy.signin-policy}
