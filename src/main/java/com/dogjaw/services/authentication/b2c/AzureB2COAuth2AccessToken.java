@@ -1,9 +1,11 @@
 package com.dogjaw.services.authentication.b2c;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 
@@ -15,17 +17,19 @@ import java.util.Map;
  */
 public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
 
-    private Date refreshTokenExpiration;
-    private String profileInfo;
-    private Date notBefore;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public AzureB2COAuth2AccessToken(String value) {
+    private Date refreshTokenExpiration;
+    private Date notBefore;
+    private AzureProfile profile;
+
+    public AzureB2COAuth2AccessToken(String value) throws IOException {
 
         super(value);
         parseAzureTokenInformation(this);
     }
 
-    public AzureB2COAuth2AccessToken(OAuth2AccessToken accessToken) {
+    public AzureB2COAuth2AccessToken(OAuth2AccessToken accessToken) throws IOException {
 
         super(accessToken);
 
@@ -42,7 +46,7 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
         parseAzureTokenInformation(token);
     }
 
-    private void parseAzureTokenInformation(DefaultOAuth2AccessToken accessToken) {
+    private void parseAzureTokenInformation(DefaultOAuth2AccessToken accessToken) throws IOException {
 
         long now = System.currentTimeMillis();
         Map<String, Object> info = accessToken.getAdditionalInformation();
@@ -90,8 +94,7 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
             byte[] profileBytes = Base64.decode(profile64Encoded.getBytes());
             String profileJson = new String(profileBytes);
             //Change this to a Map or a UserObject?
-            this.profileInfo = profileJson;
-
+            this.profile = new AzureProfile();//OBJECT_MAPPER.readValue(profileJson, AzureProfile.class);
         }
     }
 
@@ -100,9 +103,9 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
         return refreshTokenExpiration;
     }
 
-    public String getProfileInfo() {
+    public AzureProfile getProfile() {
 
-        return profileInfo;
+        return profile;
     }
 
     public Date getNotBefore() {

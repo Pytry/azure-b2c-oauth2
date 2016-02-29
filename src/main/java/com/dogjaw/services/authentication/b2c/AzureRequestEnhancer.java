@@ -15,10 +15,6 @@ import java.util.List;
  */
 public class AzureRequestEnhancer extends DefaultRequestEnhancer {
 
-    private String signinPolicy;
-    private String signUpPolicy;
-    private String userDetailsPolicy;
-
     @Override
     public void enhance(AccessTokenRequest request, OAuth2ProtectedResourceDetails resource, MultiValueMap<String, String> form, HttpHeaders headers) {
 
@@ -39,31 +35,5 @@ public class AzureRequestEnhancer extends DefaultRequestEnhancer {
         form.set("client_secret", resource.getClientSecret());
 
         headers.put("Content-Type", Collections.singletonList("application/json"));
-    }
-
-    public String getSigninPolicy() {
-
-        return signinPolicy;
-    }
-
-    public void setSigninPolicy(String signinPolicy) {
-
-        this.signinPolicy = signinPolicy;
-    }
-
-    public String getSignUpPolicy() {
-        return signUpPolicy;
-    }
-
-    public void setSignUpPolicy(String signUpPolicy) {
-        this.signUpPolicy = signUpPolicy;
-    }
-
-    public String getUserDetailsPolicy() {
-        return userDetailsPolicy;
-    }
-
-    public void setUserDetailsPolicy(String userDetailsPolicy) {
-        this.userDetailsPolicy = userDetailsPolicy;
     }
 }

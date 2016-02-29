@@ -15,10 +15,6 @@ public class AzurePolicyConfiguration {
     private String signupPolicy;
     private String editProfilePolicy;
     private String wellknownUrl;
-    private String rsaKeyLocation;
-    private String signinRsaKeyName;
-    private String signupRsaKeyName;
-    private String editProfileRsaKeyName;
 
     public String getSigninPolicy() {
         return signinPolicy;
@@ -50,37 +46,5 @@ public class AzurePolicyConfiguration {
 
     public void setWellknownUrl(String wellknownUrl) {
         this.wellknownUrl = wellknownUrl;
-    }
-
-    public String getRsaKeyLocation() {
-        return rsaKeyLocation;
-    }
-
-    public void setRsaKeyLocation(String rsaKeyLocation) {
-        this.rsaKeyLocation = rsaKeyLocation;
-    }
-
-    public String getSigninRsaKeyName() {
-        return signinRsaKeyName;
-    }
-
-    public void setSigninRsaKeyName(String signinRsaKeyName) {
-        this.signinRsaKeyName = signinRsaKeyName;
-    }
-
-    public String getSignupRsaKeyName() {
-        return signupRsaKeyName;
-    }
-
-    public void setSignupRsaKeyName(String signupRsaKeyName) {
-        this.signupRsaKeyName = signupRsaKeyName;
-    }
-
-    public String getEditProfileRsaKeyName() {
-        return editProfileRsaKeyName;
-    }
-
-    public void setEditProfileRsaKeyName(String editProfileRsaKeyName) {
-        this.editProfileRsaKeyName = editProfileRsaKeyName;
     }
 }

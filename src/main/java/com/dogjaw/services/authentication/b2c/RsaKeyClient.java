@@ -28,7 +28,7 @@ public class RsaKeyClient {
      *
      * @return {@link String}
      */
-    public String getSigninRsaKey() {
+    public byte[] getSigninRsaKey() {
 
         AzurePolicyMetaData metaData = metaDataClient.getSigninMetaData();
         String policy = this.policy.getSigninPolicy();
@@ -41,7 +41,7 @@ public class RsaKeyClient {
      *
      * @return {@link String}
      */
-    public String getSignupRsaKey() {
+    public byte[] getSignupRsaKey() {
 
         AzurePolicyMetaData metaData = metaDataClient.getSignupMetaData();
         String policy = this.policy.getSignupPolicy();
@@ -54,7 +54,7 @@ public class RsaKeyClient {
      *
      * @return {@link String}
      */
-    public String getEditProfileRsaKey() {
+    public byte[] getEditProfileRsaKey() {
 
         AzurePolicyMetaData metaData = metaDataClient.getEditProfileMetaData();
         String policy = this.policy.getEditProfilePolicy();
@@ -67,7 +67,7 @@ public class RsaKeyClient {
      *
      * @return {@link String}
      */
-    public String getRemoteRsaKey(String policyName, AzurePolicyMetaData metaData) {
+    public byte[] getRemoteRsaKey(String policyName, AzurePolicyMetaData metaData) {
 
         assert jsonHttpHeaders != null;
         assert restTemplate != null;
@@ -81,7 +81,7 @@ public class RsaKeyClient {
 
         byte[] body = result.getBody();
         assert body != null;
-        return new String(body);
+        return body;
     }
 
     public void setPolicy(AzurePolicyConfiguration policy) {

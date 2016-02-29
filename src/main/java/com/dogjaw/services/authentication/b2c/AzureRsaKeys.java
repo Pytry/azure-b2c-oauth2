@@ -1,6 +1,8 @@
 package com.dogjaw.services.authentication.b2c;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import java.util.List;
 
@@ -12,21 +14,14 @@ public class AzureRsaKeys {
 
     @JsonProperty("keys")
     private List<RsaKeyB2C> keys;
-    private String originalValue;
 
+    @JsonGetter("keys")
     public List<RsaKeyB2C> getKeys() {
         return keys;
     }
 
+    @JsonSetter("keys")
     public void setKeys(List<RsaKeyB2C> keys) {
         this.keys = keys;
-    }
-
-    public String getOriginalValue() {
-        return originalValue;
-    }
-
-    public void setOriginalValue(String originalValue) {
-        this.originalValue = originalValue;
     }
 }

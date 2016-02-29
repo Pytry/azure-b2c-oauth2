@@ -9,6 +9,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Created by Keith Hoopes on 2/25/2016.
@@ -58,9 +59,10 @@ public class RsaKeyClientTest {
     @Test
     public void testGetSignInRsaKey() throws IOException {
 
-        String key = rsaKeyClient.getSigninRsaKey();
+        byte[] key = rsaKeyClient.getSigninRsaKey();
         assert key != null;
-        AzureRsaKeys rsaKeyB2CList = keyCachingService.getSigninRsaKey();
-        assert rsaKeyB2CList != null;
+        byte[] cachedKey = keyCachingService.getSigninRsaKey();
+        assert cachedKey != null;
+        assert Arrays.equals(key,cachedKey);
     }
 }
