@@ -161,17 +161,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return converter;
     }
 
-    @Bean(name = "oauth2ClientFilterRegistration")
-    @Autowired
-    public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
-
-        FilterRegistrationBean registration = new FilterRegistrationBean();
-        registration.setFilter(filter);
-        registration.setOrder(-100);
-
-        return registration;
-    }
-
     @Bean(name = "azurePolicyConfiguration")
     @ConfigurationProperties("azure.policy")
     AzurePolicyConfiguration azurePolicyConfiguration() {
@@ -191,6 +180,17 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     public OAuth2ProtectedResourceDetails oAuth2ProtectedResourceDetails() {
 
         return new AuthorizationCodeResourceDetails();
+    }
+
+    @Bean(name = "oauth2ClientFilterRegistration")
+    @Autowired
+    public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
+
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        registration.setFilter(filter);
+        registration.setOrder(-100);
+
+        return registration;
     }
 
     @Bean(name = "accessTokenProvider")
