@@ -1,6 +1,8 @@
 package com.dogjaw.services.authentication;
 
+import org.mitre.openid.connect.web.UserInfoInterceptor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
@@ -24,5 +26,11 @@ public class MvcConfig extends WebMvcConfigurerAdapter {
         registry.addViewController("/login").setViewName("index");
         registry.addViewController("/login/azure").setViewName("index");
         registry.addViewController("/login/github").setViewName("index");
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+
+        registry.addInterceptor(new UserInfoInterceptor());
     }
 }

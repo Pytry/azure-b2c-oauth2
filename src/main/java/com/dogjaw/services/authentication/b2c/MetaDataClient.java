@@ -1,8 +1,11 @@
 package com.dogjaw.services.authentication.b2c;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
 
 import static org.springframework.http.HttpMethod.GET;
@@ -19,6 +22,19 @@ public class MetaDataClient {
 
     private HttpHeaders jsonHttpHeaders;
 
+    public static final String
+            SigninMetaDataCache = "SigninMetaData",
+            SignupMetaDataCache = "SignupMetaData",
+            EditProfileMetaDataCache = "EditProfileMetaData";
+
+    @Scheduled(cron = "${azure.policy.refresh-cron}")
+    @CacheEvict(allEntries = true, beforeInvocation = true, value = {
+            SigninMetaDataCache,SignupMetaDataCache,EditProfileMetaDataCache
+    })
+    public void expireMetaDataCaches(){}
+
+
+
     /**
      * Retrieves the meta data for the signin policy.
      * Since the meta data is not likely to change,
@@ -26,6 +42,7 @@ public class MetaDataClient {
      *
      * @return {@link AzurePolicyMetaData}
      */
+    @Cacheable(SigninMetaDataCache)
     public AzurePolicyMetaData getSigninMetaData() {
 
         return getAzurePolicyMetaData(policy.getSigninPolicy());
@@ -38,6 +55,7 @@ public class MetaDataClient {
      *
      * @return {@link AzurePolicyMetaData}
      */
+    @Cacheable(SignupMetaDataCache)
     public AzurePolicyMetaData getSignupMetaData() {
 
         return getAzurePolicyMetaData(policy.getSignupPolicy());
@@ -50,6 +68,7 @@ public class MetaDataClient {
      *
      * @return {@link AzurePolicyMetaData}
      */
+    @Cacheable(EditProfileMetaDataCache)
     public AzurePolicyMetaData getEditProfileMetaData() {
 
         return getAzurePolicyMetaData(policy.getEditProfilePolicy());

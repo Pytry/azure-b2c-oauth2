@@ -15,6 +15,7 @@ import java.util.Arrays;
  * Created by Keith Hoopes on 2/25/2016.
  * Copyright Bear River Mutual 2016.
  */
+@SuppressWarnings("SpringJavaAutowiringInspection")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = AzureB2CApplication.class)
 public class RsaKeyClientTest {

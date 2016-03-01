@@ -1,42 +1,62 @@
 security:
   oauth2:
-
     resource:
-      user-info-uri: https://graph.windows.net/yourcustomername.onmicrosoft.com/user?api-version=beta
-      token-info-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=${azure.policy.signin-policy}
-      jwt:
-        key-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/discovery/v2.0/keys?p=${azure.policy.signin-policy}
+      user-info-uri: https://graph.windows.net/yourcustomer.onmicrosoft.com/user?api-version=beta
 
 logging:
   level:
     org.springframework.security: DEBUG
+
 spring:
   resources:
     chain:
       enabled: true
+
 azure:
-  #Custom Values for Azure B2C policies
-  policy:
-    wellknown-url: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/v2.0/.well-known/openid-configuration
-    signin-policy: your_signin_policy
-    signup-policy: your_signup_policy
-    edit-profile-policy: edit_policy
+  webfinger:
+    #'force-https' must be set to true for UAT and production. Only use false in development
+    force-https: false
+    login-url-page: /
+  policy: #Azure B2C policies
+    wellknown-url: https://login.microsoftonline.com/yourcustomer.onmicrosoft.com/v2.0/.well-known/openid-configuration
+    signin-policy: yourpolicyname
+    signup-policy: yourpolicyname
+    edit-profile-policy: yourpolicyname
     #store Rsa keys in a directory. Should end with '/'.
     #Refresh every morning at 5
-    refresh-cron: 0 5 * * * *
+    refresh-cron: 0 0 5 1/1 * ?
+  open-id-connect:
+    client-id: yourclientid
+    client-secret: thisistheappkey
+    client-name: B2C Authentication Example
+    redirect-urls: https://localhost:8443/login/azure
+    scope: openId profile
+    grant_types: authorization_code
+    response_types: code id_token
+    jwksUri: https://login.microsoftonline.com/yourcustomer.onmicrosoft.com/discovery/v2.0/keys?p=${azure.policy.signin-policy}
+    application_type: web
+    access-token-validity-seconds: 600
+    request-object-signing-alg: RS256
 
-  client:
-    access-token-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/oauth2/v2.0/token?p=${azure.policy.signin-policy}
-    authentication-scheme: query
-    client-athentication-scheme: query
-    client-id: your_client)id
-    client-secret: your_client)secret
-    pre-established-redirect-uri: https://localhost:8443/login/azure
-    redirect-url: https://localhost:8443/login/azure
-#    response_type: code id_token
-#    response_mode: form_post
-#    state: random_value_with_session_information_encoded
-    scope: openId
-    token-name: id_token
-    grant_type: authorization_code
-    user-authorization-uri: https://login.microsoftonline.com/yourcustomername.onmicrosoft.com/oauth2/v2.0/authorize?p=${azure.policy.signin-policy}
+#    client_uri:
+#    logo_uri:
+#    contacts:
+#    tos_uri:
+#    policyUri:
+    resource:
+      user-info-uri: https://graph.windows.net/yourcustomer.onmicrosoft.com/user?api-version=beta
+    client:
+      access-token-uri: https://login.microsoftonline.com/yourcustomer.onmicrosoft.com/oauth2/v2.0/token?p=${azure.policy.signin-policy}
+      authentication-scheme: query
+      client-athentication-scheme: query
+      client-id: ${azure.open-id-connect.client-id}
+      client-secret: ${azure.open-id-connect.client-secret}
+      pre-established-redirect-uri: https://localhost:8443/login/azure
+      redirect-url: https://localhost:8443/login/azure
+      response_type: ${azure.open-id-connect.response_types}
+      response_mode: form_post
+      state: random_value_with_session_information_encoded
+      scope: ${azure.open-id-connect.scope}
+      token-name: id_token
+      grant_type: ${azure.open-id-connect.grant_types}
+      user-authorization-uri: https://login.microsoftonline.com/yourcustomer.onmicrosoft.com/oauth2/v2.0/authorize?p=${azure.policy.signin-policy}

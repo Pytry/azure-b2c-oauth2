@@ -28,7 +28,7 @@ import org.springframework.context.annotation.ComponentScan;
  * that meant I had to have a separate main "SpringBootApplication" configuration.
  */
 @SpringBootApplication
-@ComponentScan("com.dogjaw.services.authentication")
+@ComponentScan(value = {"com.dogjaw.services.authentication"})
 public class AzureB2CApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
