@@ -34,13 +34,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
@@ -92,24 +92,23 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        http
+        http.authenticationProvider(openIdConnectAuthenticationProvider())
                 .antMatcher("/**").authorizeRequests()
                 .anyRequest().authenticated()
                 .antMatchers("/", "/login**", "/webjars/**").permitAll().and()
-                .exceptionHandling()
-                .authenticationEntryPoint(loginUrlAuthenticationEntryPoint()).and()
+                .exceptionHandling().authenticationEntryPoint(loginUrlAuthenticationEntryPoint()).and()
                 .logout().logoutSuccessUrl("/").permitAll().and()
                 .csrf().csrfTokenRepository(csrfTokenRepository()).and()
                 .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
                 .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-
-        auth.authenticationProvider(openIdConnectAuthenticationProvider());
-
-    }
+//    @Override
+//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+//
+//        auth
+//
+//    }
 
     @Configuration
     @EnableResourceServer
@@ -130,9 +129,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private static final int TIMEOUT = 30000;
 
     @Bean(name="loginUrlAuthenticationEntryPoint")
-    LoginUrlAuthenticationEntryPoint loginUrlAuthenticationEntryPoint(){
+    AuthenticationEntryPoint loginUrlAuthenticationEntryPoint(){
 
-        return new LoginUrlAuthenticationEntryPoint(oAuth2ProtectedResourceDetails().getUserAuthorizationUri());
+        AuthorizationCodeResourceDetails authorizationCodeResourceDetails = oAuth2ProtectedResourceDetails();
+        String userAuthorizationUri = authorizationCodeResourceDetails.getUserAuthorizationUri();
+
+        return new LoginUrlAuthenticationEntryPoint(userAuthorizationUri);
     }
 
     @Bean(name = "jsonHttpHeaders")
@@ -269,7 +271,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         OIDCAuthenticationFilter filter = new OIDCAuthenticationFilter();
         filter.setAuthenticationManager(authenticationManager());
-        filter.setIssuerService(hybridIssuerService());
+        filter.setIssuerService(thirdPartyIssuerService());
         filter.setServerConfigurationService(dynamicServerConfigurationService());
         filter.setClientConfigurationService(dynamicClientConfigurationService());
         filter.setAuthRequestOptionsService(staticAuthRequestOptionsService());
@@ -278,40 +280,46 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return filter;
     }
 
-    @Bean(name = "staticIssuerService")
-    StaticSingleIssuerService staticIssuerService() {
+//    @Bean(name = "staticIssuerService")
+//    StaticSingleIssuerService staticIssuerService() {
+//
+//        StaticSingleIssuerService issuerService = new StaticSingleIssuerService();
+//        issuerService.setIssuer(metaDataClient().getSigninMetaData().getIssuer());
+//
+//        return issuerService;
+//    }
 
-        StaticSingleIssuerService issuerService = new StaticSingleIssuerService();
-        issuerService.setIssuer(metaDataClient().getSigninMetaData().getIssuer());
+//    @Bean(name = "webfingerIssuerService")
+//    @ConfigurationProperties("azure.webfinger")
+//    WebfingerIssuerService webfingerIssuerService() {
+//
+//        return new WebfingerIssuerService();
+//    }
 
-        return issuerService;
-    }
-
-    @Bean(name = "webfingerIssuerService")
-    @ConfigurationProperties("azure.webfinger")
-    WebfingerIssuerService webfingerIssuerService() {
-
-        return new WebfingerIssuerService();
-    }
-
-    @Bean(name = "webfingerIssuerService")
+    @Bean(name = "thirdPartyIssuerService")
     @ConfigurationProperties("azure.webfinger")
     ThirdPartyIssuerService thirdPartyIssuerService() {
-        return new ThirdPartyIssuerService();
+
+        ThirdPartyIssuerService thirdPartyIssuerService = new ThirdPartyIssuerService();
+        AzurePolicyMetaData meta = metaDataClient().getSigninMetaData();
+        thirdPartyIssuerService.setWhitelist(new HashSet<>(Collections.singletonList(meta.getIssuer())));
+        thirdPartyIssuerService.setAccountChooserUrl(meta.getAuthorizationEndpoint());
+
+        return thirdPartyIssuerService;
     }
 
-    @Bean(name = "hybridIssuerService")
-    HybridIssuerService hybridIssuerService() {
-
-        HybridIssuerService service = new HybridIssuerService();
-        /*
-        This default property forces the webfinger issuer URL to be HTTPS, turn off for development work
-         */
-        service.setForceHttps(forceHttps != null && forceHttps);
-        service.setLoginPageUrl("/login/azure");
-
-        return service;
-    }
+//    @Bean(name = "hybridIssuerService")
+//    HybridIssuerService hybridIssuerService() {
+//
+//        HybridIssuerService service = new HybridIssuerService();
+//        /*
+//        This default property forces the webfinger issuer URL to be HTTPS, turn off for development work
+//         */
+//        service.setForceHttps(forceHttps != null && forceHttps);
+//        service.setLoginPageUrl("/");
+//
+//        return service;
+//    }
 
     @Bean(name = "staticServerConfigurationService")
     StaticServerConfigurationService staticServerConfigurationService() {
@@ -407,7 +415,21 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     StaticAuthRequestOptionsService staticAuthRequestOptionsService() {
 
         StaticAuthRequestOptionsService service = new StaticAuthRequestOptionsService();
-        service.setOptions(new HashMap<String, String>());
+        HashMap<String, String> options = new HashMap<>(2);
+        AuthorizationCodeResourceDetails resource = oAuth2ProtectedResourceDetails();
+        List<String> scopeList = resource.getScope();
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < scopeList.size(); i++) {
+
+            if (i > 0) {
+                builder.append(" ");
+            }
+            builder.append(scopeList.get(i));
+        }
+        options.put("scope", builder.toString());
+        options.put("client_id", resource.getClientId());
+
+        service.setOptions(options);
 
         return service;
     }
