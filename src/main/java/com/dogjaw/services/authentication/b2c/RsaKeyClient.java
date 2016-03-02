@@ -1,8 +1,11 @@
 package com.dogjaw.services.authentication.b2c;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
 
 import static org.springframework.http.HttpMethod.POST;
@@ -23,11 +26,17 @@ public class RsaKeyClient {
 
     private MetaDataClient metaDataClient;
 
+    @Scheduled(cron="${azure.policy.rsa-keys-refresh-cron}")
+    @CacheEvict(allEntries = true,beforeInvocation = true,cacheNames = {
+            "getSigninRsaKey","getSignupRsaKey","getEditProfileRsaKey"
+    })
+    public void evictAll(){}
     /**
      * Retrieves the RsaKey for the signin policy.
      *
      * @return {@link String}
      */
+    @Cacheable("getSigninRsaKey")
     public byte[] getSigninRsaKey() {
 
         AzurePolicyMetaData metaData = metaDataClient.getSigninMetaData();
@@ -41,6 +50,7 @@ public class RsaKeyClient {
      *
      * @return {@link String}
      */
+    @Cacheable("getSignupRsaKey")
     public byte[] getSignupRsaKey() {
 
         AzurePolicyMetaData metaData = metaDataClient.getSignupMetaData();
@@ -54,6 +64,7 @@ public class RsaKeyClient {
      *
      * @return {@link String}
      */
+    @Cacheable("getEditProfileRsaKey")
     public byte[] getEditProfileRsaKey() {
 
         AzurePolicyMetaData metaData = metaDataClient.getEditProfileMetaData();
