@@ -38,12 +38,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
@@ -59,6 +56,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -93,13 +92,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
 
         http.authenticationProvider(openIdConnectAuthenticationProvider())
+                .csrf().disable()
                 .antMatcher("/**").authorizeRequests()
                 .anyRequest().authenticated()
-                .antMatchers("/", "/login**", "/webjars/**").permitAll().and()
+                .antMatchers("/webjars/**").permitAll().and()
                 .exceptionHandling().authenticationEntryPoint(loginUrlAuthenticationEntryPoint()).and()
-                .logout().logoutSuccessUrl("/").permitAll().and()
-                .csrf().csrfTokenRepository(csrfTokenRepository()).and()
-                .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
+                .logout().logoutSuccessUrl("/loggedout").permitAll().and()
+//                .csrf().csrfTokenRepository(csrfTokenRepository()).and()
+//                .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
                 .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
     }
 
@@ -110,31 +110,53 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 //
 //    }
 
-    @Configuration
-    @EnableResourceServer
-    protected static class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
-
-        @Override
-        public void configure(HttpSecurity http) throws Exception {
-
-            http
-                    .antMatcher("/me")
-                    .authorizeRequests().anyRequest().authenticated();
-        }
-    }
+//    @Configuration
+//    @EnableResourceServer
+//    protected static class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
+//
+//        @Override
+//        public void configure(HttpSecurity http) throws Exception {
+//
+//            http
+//                    .antMatcher("/me")
+//                    .authorizeRequests().anyRequest().authenticated();
+//        }
+//    }
 
     /**
      * AZURE BEANS
      */
     private static final int TIMEOUT = 30000;
 
-    @Bean(name="loginUrlAuthenticationEntryPoint")
-    AuthenticationEntryPoint loginUrlAuthenticationEntryPoint(){
+    @Bean(name = "loginUrlAuthenticationEntryPoint")
+    AuthenticationEntryPoint loginUrlAuthenticationEntryPoint() throws UnsupportedEncodingException {
 
-        AuthorizationCodeResourceDetails authorizationCodeResourceDetails = oAuth2ProtectedResourceDetails();
-        String userAuthorizationUri = authorizationCodeResourceDetails.getUserAuthorizationUri();
+        AuthorizationCodeResourceDetails details = oAuth2ProtectedResourceDetails();
+        String userAuthorizationUri = details.getUserAuthorizationUri();
+        String clientId = details.getClientId();
+        String redirect = details.getPreEstablishedRedirectUri();
+        String response_type = "code id_token";
+        String response_mode = "form_post";
+        String nonce = "dogjaw";
+        List<String> scopeList = details.getScope();
+        StringBuilder scope = new StringBuilder();
+        for (int i = 0; i < scopeList.size(); i++) {
+            String val = scopeList.get(i);
+            if (i > 0) {
+                scope.append(" ");
+            }
+            scope.append(val);
+        }
 
-        return new LoginUrlAuthenticationEntryPoint(userAuthorizationUri);
+        return new LoginUrlAuthenticationEntryPoint(
+                userAuthorizationUri +
+                        "&client_id=" + URLEncoder.encode(clientId, "UTF-8") +
+                        "&scope=" + URLEncoder.encode(scope.toString(), "UTF-8") +
+                        "&redirect_uri=" + URLEncoder.encode(redirect, "UTF-8") +
+                        "&state=" + URLEncoder.encode("authenticating", "UTF-8") +
+                        "&response_type=" + URLEncoder.encode(response_type, "UTF-8") +
+                        "&response_mode=" + URLEncoder.encode(response_mode, "UTF-8") +
+                        "&nonce=" + URLEncoder.encode(nonce, "UTF-8"));
     }
 
     @Bean(name = "jsonHttpHeaders")
@@ -450,8 +472,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 //        return builder;
 //    }
 
-    @Bean(name="encryptedAuthRequestUrlBuilder")
-    EncryptedAuthRequestUrlBuilder encryptedAuthRequestUrlBuilder(){
+    @Bean(name = "encryptedAuthRequestUrlBuilder")
+    EncryptedAuthRequestUrlBuilder encryptedAuthRequestUrlBuilder() {
 
         EncryptedAuthRequestUrlBuilder builder = new EncryptedAuthRequestUrlBuilder();
         builder.setEncrypterService(clientKeyCacheService());
@@ -508,7 +530,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
 
-
     @Bean(name = "defaultKeyStore")
     @ConfigurationProperties("azure.keystore")
     JWKSetKeyStore defaultKeyStore() {
@@ -516,9 +537,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return new JWKSetKeyStore();
     }
 
-
-    @Bean(name="ssoFilter")
-    Filter ssoFilter() throws Exception {
+    private Filter ssoFilter() throws Exception {
 
         CompositeFilter filter = new CompositeFilter();
 
@@ -529,7 +548,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return filter;
     }
 
-    @Bean(name="csrfHeaderFilter")
+    @Bean(name = "csrfHeaderFilter")
     Filter csrfHeaderFilter() {
 
         return new OncePerRequestFilter() {
@@ -559,7 +578,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
      *
      * @return CsrfTokenRepository
      */
-    @Bean(name="csrfTokenRepository")
+    @Bean(name = "csrfTokenRepository")
     CsrfTokenRepository csrfTokenRepository() {
 
         HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
