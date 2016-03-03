@@ -189,9 +189,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return new BaseClientDetails();
     }
 
-    @Bean(name = "authorizationCodeResourceDetails")
-    @ConfigurationProperties("azure.client")
-    public AuthorizationCodeResourceDetails authorizationCodeResourceDetails() {
+    @Bean(name = "customerResourceDetails")
+    @ConfigurationProperties("azure.customer")
+    public AuthorizationCodeResourceDetails customerResourceDetails() {
 
         return new AuthorizationCodeResourceDetails();
     }
@@ -271,11 +271,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private Filter ssoFilter(String path) throws Exception {
 
 
-        OAuth2ProtectedResourceDetails resource = authorizationCodeResourceDetails();
+        OAuth2ProtectedResourceDetails resource = customerResourceDetails();
 
         InMemoryUserDetailsManager inMemoryUserDetailsManager = inMemoryUserDetailsManager();
 
-        AoidJwtAccessTokenConverter jwtTokenEnhancer = new AoidJwtAccessTokenConverter(rsaKeyCachingService,inMemoryUserDetailsManager, authorizationCodeResourceDetails());
+        AoidJwtAccessTokenConverter jwtTokenEnhancer = new AoidJwtAccessTokenConverter(rsaKeyCachingService,inMemoryUserDetailsManager, customerResourceDetails());
         jwtTokenEnhancer.afterPropertiesSet();
 
         DefaultAccessTokenConverter tokenConverter = new DefaultAccessTokenConverter();
