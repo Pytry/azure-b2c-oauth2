@@ -273,12 +273,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         tokenConverter.setUserTokenConverter(userTokenConverter);
         jwtTokenEnhancer.setAccessTokenConverter(tokenConverter);
         JwtTokenStore jwtTokenStore = new JwtTokenStore(jwtTokenEnhancer);
-        InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
-
-        DefaultTokenServices tokenServices = new DefaultTokenServices();
-        tokenServices.setTokenStore(jwtTokenStore);
-        tokenServices.setClientDetailsService(clientDetailsService);
-        tokenServices.afterPropertiesSet();
 
         OAuth2RestTemplate azureTemplate = new OAuth2RestTemplate(
                 resource,
@@ -287,6 +281,17 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         AccessTokenProvider accessTokenProvider = accessTokenProvider();
         azureTemplate.setAccessTokenProvider(accessTokenProvider);
         azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
+
+        Map<String,ClientDetails> detailsMap = new HashMap<>();
+        ClientDetails clientDetails = clientDetails();
+        detailsMap.put(clientDetails.getClientId(),clientDetails);
+        InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
+        clientDetailsService.setClientDetailsStore(detailsMap);
+
+        DefaultTokenServices tokenServices = new DefaultTokenServices();
+        tokenServices.setTokenStore(jwtTokenStore);
+        tokenServices.setClientDetailsService(clientDetailsService);
+        tokenServices.afterPropertiesSet();
 
         OAuth2ClientAuthenticationProcessingFilter azureFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
         azureFilter.setRestTemplate(azureTemplate);

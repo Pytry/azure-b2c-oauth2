@@ -31,7 +31,6 @@ public class AzureRequestEnhancer extends DefaultRequestEnhancer {
         }
         form.set("scope", builder.toString());
         form.set("client_id", resource.getClientId());
-        form.set("code",request.getAuthorizationCode());
         form.set("client_secret", resource.getClientSecret());
 
         headers.put("Content-Type", Collections.singletonList("application/json"));

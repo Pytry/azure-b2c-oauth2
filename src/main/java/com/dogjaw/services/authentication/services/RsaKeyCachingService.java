@@ -34,41 +34,14 @@ public class RsaKeyCachingService {
      * Reloads the RSA keys for the signin, signup, and edit-profile policies
      * @throws IOException
      */
-    @Scheduled(cron = "${azure.policy.refresh-cron}")
+    @Scheduled(cron = "${azure.policy.verifier-refresh-cron}")
     public synchronized void refreshRsaKeys() throws IOException {
 
         verifierCache.clear();
         keyCache.clear();
-        byte[] signinRsaKey = getSigninRsaKey();
-        AzureRsaKeys rsaKeys = mapper.readValue(new String(signinRsaKey), AzureRsaKeys.class);
-        setAzureRsaKeys(rsaKeys);
-    }
-
-    /**
-     * Reloads the RSA key for the signin policy
-     * @throws IOException
-     */
-    public byte[] getSigninRsaKey() throws IOException {
-
-        return rsaKeyClient.getSigninRsaKey();
-    }
-
-    /**
-     * Reloads the RSA key for the signup policy
-     * @throws IOException
-     */
-    public byte[] getSignupRsaKey() throws IOException {
-
-        return rsaKeyClient.getSignupRsaKey();
-    }
-
-    /**
-     * Reloads the RSA key for the edit-profile policy
-     * @throws IOException
-     */
-    public byte[] getEditProfileRsaKey() throws IOException {
-
-        return rsaKeyClient.getEditProfileRsaKey();
+        loadSigninRsaKey();
+        loadSignupRsaKey();
+        loadEditProfileRsaKey();
     }
 
     /**
@@ -104,25 +77,52 @@ public class RsaKeyCachingService {
     }
 
     /**
+     * Reloads the RSA key for the signin policy
+     * @throws IOException
+     */
+    private void loadSigninRsaKey() throws IOException {
+
+        setAzureRsaKeys(rsaKeyClient.getSigninRsaKey());
+    }
+
+    /**
+     * Reloads the RSA key for the signup policy
+     * @throws IOException
+     */
+    private void loadSignupRsaKey() throws IOException {
+
+        setAzureRsaKeys(rsaKeyClient.getSignupRsaKey());
+    }
+
+    /**
+     * Reloads the RSA key for the edit-profile policy
+     * @throws IOException
+     */
+    private void loadEditProfileRsaKey() throws IOException {
+
+        setAzureRsaKeys(rsaKeyClient.getEditProfileRsaKey());
+    }
+
+
+
+    /**
      * Populates the caches with the given keys.
      *
-     * @param azureRsaKeys {@link AzureRsaKeys}
+     * @param keys {@link byte[]}
      */
-    private void setAzureRsaKeys(AzureRsaKeys azureRsaKeys) {
-        assert azureRsaKeys != null;
-        assert azureRsaKeys.getKeys() != null;
-        assert azureRsaKeys.getKeys().size() > 0;
+    private void setAzureRsaKeys(byte[] keys) throws IOException {
+        assert keys != null;
+        assert keys.length>0;
 
+        AzureRsaKeys azureRsaKeys = mapper.readValue(new String(keys), AzureRsaKeys.class);
         List<RsaKeyB2C> b2cKeyList = azureRsaKeys.getKeys();
 
         for (RsaKeyB2C key : b2cKeyList) {
 
             String kid = key.getKid();
-            RsaVerifier rsaVerifier;
-
             BigInteger modulus = new BigInteger(key.getN().getBytes());
             BigInteger publicExponent = new BigInteger(key.getE().getBytes());
-            rsaVerifier = new RsaVerifier(modulus, publicExponent);
+            RsaVerifier rsaVerifier = new RsaVerifier(modulus, publicExponent);
 
             verifierCache.put(kid, rsaVerifier);
             keyCache.put(kid, key);
