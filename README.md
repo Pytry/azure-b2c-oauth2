@@ -12,8 +12,8 @@ clientId, and clientSecret for AzureAD B2C.
 ###Notice
 The authentication and userdetails loading should now work.
 HOWEVER, there are a few things I have not done/fixed yet. 
-•RSA verification is not being done. Any help on this is appreciated.
-•For some weird reason, after properly authenticating and loading the user, I am being redirected to the bootstrap.js file instead of back to the index. But if you see the javascript file, it means you are authenticated! If you manually navigate to the root path, you will see that you are logged in, and you should be able to log in and out at will (no more weird js files being loaded).
+- RSA verification is not being done. Any help on this is appreciated.
+- For some weird reason, after properly authenticating and loading the user, I am being redirected to the bootstrap.js file instead of back to the index. But if you see the javascript file, it means you are authenticated! If you manually navigate to the root path, you will see that you are logged in, and you should be able to log in and out at will (no more weird js files being loaded).
 
 
 ### Azure Documentation and Resources
