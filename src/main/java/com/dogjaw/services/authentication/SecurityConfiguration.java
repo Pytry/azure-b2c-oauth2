@@ -5,6 +5,7 @@ import com.dogjaw.services.authentication.services.RsaKeyCachingService;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth2Sso;
 import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -74,6 +75,7 @@ import java.util.*;
 @RestController
 @Configuration
 @EnableOAuth2Client
+@EnableOAuth2Sso
 @EnableWebSecurity
 @Order(6)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
@@ -94,15 +96,22 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
 
         http
-                .antMatcher("/**").authorizeRequests()
-                .anyRequest().authenticated()
-                .antMatchers("/", "/login**", "/webjars/**").permitAll().and()
-                .exceptionHandling()
-                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/")).and()
-                .logout().logoutSuccessUrl("/").permitAll().and()
-                .csrf().csrfTokenRepository(csrfTokenRepository()).and()
-                .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
-                .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
+                .authorizeRequests()
+                    .antMatchers("/", "/login**","/webjars/**").permitAll()
+                    .antMatchers("/**").authenticated()
+                .and()
+                    .exceptionHandling()
+                        .authenticationEntryPoint(
+                                new LoginUrlAuthenticationEntryPoint("/"))
+                .and()
+                    .logout()
+                        .logoutSuccessUrl("/").permitAll()
+                .and()
+                    .csrf()
+                        .csrfTokenRepository(csrfTokenRepository())
+                .and()
+                    .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
+                    .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
     }
 
     @Override
