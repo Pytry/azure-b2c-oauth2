@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 
 /**
  * Created by Keith Hoopes on 2/29/2016.
+ *
  */
 public class JwtB2C implements Jwt {
 
@@ -26,6 +27,7 @@ public class JwtB2C implements Jwt {
 
         return header;
     }
+
     @Override
     public String getClaims() {
 

@@ -22,13 +22,13 @@ public class AzureIdTokenProvider extends AuthorizationCodeAccessTokenProvider {
 
         OAuth2AccessToken accessToken = super.obtainAccessToken(details, request);
 
-        AzureB2COAuth2AccessToken azureAccessToken;
+        AzureAccessToken azureAccessToken;
         try {
-            azureAccessToken = new AzureB2COAuth2AccessToken(accessToken);
+            azureAccessToken = new AzureAccessToken(accessToken);
         }
         catch (IOException e) {
             e.printStackTrace();
-            throw new AccessDeniedException("Could not create AzureB2COAuth2AccessToken.",e);
+            throw new AccessDeniedException("Could not create AzureAccessToken.",e);
         }
         return azureAccessToken;
     }

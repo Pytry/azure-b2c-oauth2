@@ -17,7 +17,7 @@ import java.util.Map;
  * Adds some additional information that azure requires,
  * and some that security requires.
  */
-public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
+public class AzureAccessToken extends DefaultOAuth2AccessToken{
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -25,7 +25,7 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
     private Date notBefore;
     private AzureProfile profile;
 
-    public AzureB2COAuth2AccessToken(OAuth2AccessToken accessToken) throws IOException {
+    public AzureAccessToken(OAuth2AccessToken accessToken) throws IOException {
 
         super(accessToken);
 
@@ -87,6 +87,7 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
 
             String profile64Encoded = (String) info.get("profile_info");
             byte[] profileBytes = Base64.decode(profile64Encoded.getBytes());
+            String profileJson = new String(profileBytes);
             try {
                 this.profile = OBJECT_MAPPER.readValue(profileBytes, AzureProfile.class);
             }

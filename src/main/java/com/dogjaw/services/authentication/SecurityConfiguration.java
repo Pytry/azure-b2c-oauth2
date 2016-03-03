@@ -1,8 +1,6 @@
 package com.dogjaw.services.authentication;
 
 import com.dogjaw.services.authentication.b2c.*;
-import com.dogjaw.services.authentication.logging.AuthorizationLoggingIntercepter;
-import com.dogjaw.services.authentication.logging.LoggingRequestInterceptor;
 import com.dogjaw.services.authentication.services.RsaKeyCachingService;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -142,7 +140,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     RestTemplate commonRestTemplate() {
 
         RestTemplate restTemplate = new RestTemplate(new SimpleClientHttpRequestFactory());
-        restTemplate.getInterceptors().add(new LoggingRequestInterceptor());
 
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setConnectTimeout(TIMEOUT);
@@ -295,7 +292,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         );
         AccessTokenProvider accessTokenProvider = accessTokenProvider();
         azureTemplate.setAccessTokenProvider(accessTokenProvider);
-        azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
 
         Map<String,ClientDetails> detailsMap = new HashMap<>();
         ClientDetails clientDetails = clientDetails();

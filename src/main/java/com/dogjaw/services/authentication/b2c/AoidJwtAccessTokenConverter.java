@@ -66,10 +66,11 @@ public class AoidJwtAccessTokenConverter extends JwtAccessTokenConverter {
 
                 map.put(UserAuthenticationConverter.USERNAME, map.get(NAME));
             }
-            String kid = jwt.getHeader().getKid();
+//            Note: RSA verification is not yet working.
+//            String kid = jwt.getHeader().getKid();
 //            RsaVerifier rsaVerifier = rsaKeyCachingService.getRsaVerifier(kid);
 //            jwt.verifySignature(rsaVerifier);
-
+//TODO: verify the claims and header.
             UserClaims userClaims = objectMapper.convertValue(map, UserClaims.class);
             if (userClaims.isCredentialsNonExpired()) {
 
