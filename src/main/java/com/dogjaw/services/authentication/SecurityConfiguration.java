@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -106,6 +107,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
     }
 
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+
+        auth.userDetailsService(inMemoryUserDetailsManager());
+    }
+
     @Configuration
     @EnableResourceServer
     protected static class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
@@ -186,9 +193,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return new BaseClientDetails();
     }
 
-    @Bean(name = "oAuth2ProtectedResourceDetails")
+    @Bean(name = "authorizationCodeResourceDetails")
     @ConfigurationProperties("azure.client")
-    public OAuth2ProtectedResourceDetails oAuth2ProtectedResourceDetails() {
+    public AuthorizationCodeResourceDetails authorizationCodeResourceDetails() {
 
         return new AuthorizationCodeResourceDetails();
     }
@@ -259,17 +266,26 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private RsaKeyCachingService rsaKeyCachingService;
 
+    @Bean(name="inMemoryUserDetailsManager")
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager(){
+
+        return new InMemoryUserDetailsManager(Collections.<UserDetails>emptyList());
+    }
+
     private Filter ssoFilter(String path) throws Exception {
 
 
-        OAuth2ProtectedResourceDetails resource = oAuth2ProtectedResourceDetails();
+        OAuth2ProtectedResourceDetails resource = authorizationCodeResourceDetails();
 
-        AzureJwtAccessTokenConverter jwtTokenEnhancer = new AzureJwtAccessTokenConverter(rsaKeyCachingService);
+        InMemoryUserDetailsManager inMemoryUserDetailsManager = inMemoryUserDetailsManager();
+
+        AoidJwtAccessTokenConverter jwtTokenEnhancer = new AoidJwtAccessTokenConverter(rsaKeyCachingService,inMemoryUserDetailsManager, authorizationCodeResourceDetails());
         jwtTokenEnhancer.afterPropertiesSet();
+
         DefaultAccessTokenConverter tokenConverter = new DefaultAccessTokenConverter();
         DefaultUserAuthenticationConverter userTokenConverter = new DefaultUserAuthenticationConverter();
 
-        userTokenConverter.setUserDetailsService(new InMemoryUserDetailsManager(new LinkedList<UserDetails>()));
+        userTokenConverter.setUserDetailsService(userDetailsService());
         tokenConverter.setUserTokenConverter(userTokenConverter);
         jwtTokenEnhancer.setAccessTokenConverter(tokenConverter);
         JwtTokenStore jwtTokenStore = new JwtTokenStore(jwtTokenEnhancer);
@@ -282,11 +298,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         azureTemplate.setAccessTokenProvider(accessTokenProvider);
         azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
 
+
+
         Map<String,ClientDetails> detailsMap = new HashMap<>();
         ClientDetails clientDetails = clientDetails();
         detailsMap.put(clientDetails.getClientId(),clientDetails);
+
         InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
         clientDetailsService.setClientDetailsStore(detailsMap);
+
 
         DefaultTokenServices tokenServices = new DefaultTokenServices();
         tokenServices.setTokenStore(jwtTokenStore);
