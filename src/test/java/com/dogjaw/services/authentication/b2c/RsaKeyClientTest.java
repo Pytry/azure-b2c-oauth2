@@ -11,8 +11,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.IOException;
 
 /**
- * Created by Keith Hoopes on 2/25/2016.
- * Copyright Bear River Mutual 2016.
+ * Created by Keith Hoopes on 2/25/2016. *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = AzureB2CApplication.class)
@@ -29,6 +28,7 @@ public class RsaKeyClientTest {
 
     @Test
     public void load() {
+
         assert rsaKeyClient != null;
         assert metaDataClient != null;
         assert keyCachingService != null;

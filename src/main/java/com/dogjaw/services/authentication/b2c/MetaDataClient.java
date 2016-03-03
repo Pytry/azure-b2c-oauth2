@@ -12,7 +12,6 @@ import static org.springframework.http.HttpMethod.GET;
 
 /**
  * Created by Keith Hoopes on 2/25/2016.
- * Copyright Bear River Mutual 2016.
  */
 public class MetaDataClient {
 

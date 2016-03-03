@@ -15,7 +15,9 @@ import java.util.Map;
 
 /**
  * Created by Keith Hoopes on 2/26/2016.
- * Copyright Bear River Mutual 2016.
+ *
+ * Overrides the decode method to add azure specific details, and ot compensate
+ * for details that it leaves out.
  */
 public class AoidJwtAccessTokenConverter extends JwtAccessTokenConverter {
 

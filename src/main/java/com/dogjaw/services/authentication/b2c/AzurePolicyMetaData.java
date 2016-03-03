@@ -7,7 +7,6 @@ import java.util.Map;
 
 /**
  * Created by Keith Hoopes on 2/25/2016.
- * Copyright Bear River Mutual 2016.
  * <p/>
  * Model for holding the meta-data retrieved from well known endpoints concerning policies.
  */

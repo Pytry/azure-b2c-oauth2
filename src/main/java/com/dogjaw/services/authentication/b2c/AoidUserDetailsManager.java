@@ -13,7 +13,8 @@ import java.util.Map;
 
 /**
  * Created by Keith Hoopes on 3/2/2016.
- * Copyright Bear River Mutual 2016.
+ *
+ * This is not used, bit eventually we should use it to connect to a database for user retrieval and creation.
  */
 @SuppressWarnings("unused")
 @Service
@@ -22,7 +23,6 @@ public class AoidUserDetailsManager implements UserDetailsManager {
 
     @Autowired
     private MetaDataClient metaDataClient;
-    private AoidClientDetailsService service;
 
     private Map<String,String> requestParameters;
     private String responseType;

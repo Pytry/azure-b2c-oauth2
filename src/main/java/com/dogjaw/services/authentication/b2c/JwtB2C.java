@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 
 /**
  * Created by Keith Hoopes on 2/29/2016.
- * Copyright Bear River Mutual 2016.
  */
 public class JwtB2C implements Jwt {
 

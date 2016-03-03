@@ -11,7 +11,6 @@ import java.io.IOException;
 
 /**
  * Created by Keith Hoopes on 2/3/2016.
- * Copyright Bear River Mutual 2016.
  */
 public class AuthorizationLoggingIntercepter implements ClientHttpRequestInterceptor {
 

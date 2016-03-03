@@ -2,7 +2,6 @@ package com.dogjaw.services.authentication.b2c;
 
 /**
  * Created by Keith Hoopes on 2/24/2016.
- * Copyright Bear River Mutual 2016.
  *
  * Azure B2C is a Trademark of Microsoft Corporation
  *

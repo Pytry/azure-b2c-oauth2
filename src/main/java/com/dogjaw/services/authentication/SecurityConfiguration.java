@@ -71,7 +71,7 @@ import java.util.*;
 
 /**
  * Created by Keith Hoopes on 2/1/2016.
- * Copyright Bear River Mutual 2016.
+ *
  */
 @RestController
 @Configuration
@@ -143,7 +143,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         RestTemplate restTemplate = new RestTemplate(new SimpleClientHttpRequestFactory());
         restTemplate.getInterceptors().add(new LoggingRequestInterceptor());
-//        restTemplate.setMessageConverters(Collections.<HttpMessageConverter<?>> singletonList(httpMessageConverter()));
 
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setConnectTimeout(TIMEOUT);
@@ -298,15 +297,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         azureTemplate.setAccessTokenProvider(accessTokenProvider);
         azureTemplate.getInterceptors().add(new AuthorizationLoggingIntercepter());
 
-
-
         Map<String,ClientDetails> detailsMap = new HashMap<>();
         ClientDetails clientDetails = clientDetails();
         detailsMap.put(clientDetails.getClientId(),clientDetails);
 
         InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
         clientDetailsService.setClientDetailsStore(detailsMap);
-
 
         DefaultTokenServices tokenServices = new DefaultTokenServices();
         tokenServices.setTokenStore(jwtTokenStore);

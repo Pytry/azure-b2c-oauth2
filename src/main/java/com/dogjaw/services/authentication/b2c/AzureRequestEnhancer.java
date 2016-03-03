@@ -11,7 +11,6 @@ import java.util.List;
 
 /**
  * Created by Keith Hoopes on 2/2/2016.
- * Copyright Bear River Mutual 2016.
  */
 public class AzureRequestEnhancer extends DefaultRequestEnhancer {
 

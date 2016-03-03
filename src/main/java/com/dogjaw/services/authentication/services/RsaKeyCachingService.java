@@ -17,7 +17,6 @@ import java.util.Map;
 
 /**
  * Created by Keith Hoopes on 2/25/2016.
- * Copyright Bear River Mutual 2016.
  */
 @Service("rsaKeyCachingService")
 public class RsaKeyCachingService {

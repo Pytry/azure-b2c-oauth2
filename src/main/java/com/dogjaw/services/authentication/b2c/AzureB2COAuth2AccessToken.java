@@ -1,6 +1,7 @@
 package com.dogjaw.services.authentication.b2c;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.codehaus.jackson.JsonParseException;
 import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
@@ -11,9 +12,10 @@ import java.util.Map;
 
 /**
  * Created by Keith Hoopes on 2/3/2016.
- * Copyright Bear River Mutual 2016.
  *
- * Represents an OpenID Token
+ * Represents an OpenID Token retrieved from Azure.
+ * Adds some additional information that azure requires,
+ * and some that security requires.
  */
 public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
 
@@ -22,12 +24,6 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
     private Date refreshTokenExpiration;
     private Date notBefore;
     private AzureProfile profile;
-
-    public AzureB2COAuth2AccessToken(String value) throws IOException {
-
-        super(value);
-        parseAzureTokenInformation(this);
-    }
 
     public AzureB2COAuth2AccessToken(OAuth2AccessToken accessToken) throws IOException {
 
@@ -56,7 +52,6 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
             if (this.getValue() == null) {
 
                 String idToken = (String) info.get("id_token");
-//                String idToken = (String) info.get("profile_info");
                 this.setValue(idToken);
             }
 
@@ -92,9 +87,14 @@ public class AzureB2COAuth2AccessToken extends DefaultOAuth2AccessToken{
 
             String profile64Encoded = (String) info.get("profile_info");
             byte[] profileBytes = Base64.decode(profile64Encoded.getBytes());
-            String profileJson = new String(profileBytes);
-            //Change this to a Map or a UserObject?
-            this.profile = new AzureProfile();//OBJECT_MAPPER.readValue(profileJson, AzureProfile.class);
+            try {
+                this.profile = OBJECT_MAPPER.readValue(profileBytes, AzureProfile.class);
+            }
+            catch(JsonParseException e){
+
+                this.profile = null;
+                //There are times when Azure returns some malformed JSON for the profile_info.
+            }
         }
     }
 

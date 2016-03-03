@@ -9,7 +9,6 @@ import java.util.*;
 
 /**
  * Created by Keith Hoopes on 3/2/2016.
- * Copyright Bear River Mutual 2016.
  * <p/>
  * For holding OAuth2 claims retrieved from the content of a JWT.
  * Possibly for transforming into UserDetails, instead of

@@ -8,7 +8,6 @@ import java.util.Map;
 
 /**
  * Created by Keith Hoopes on 2/29/2016.
- * Copyright Bear River Mutual 2016.
  */
 public class AzureProfile {
 

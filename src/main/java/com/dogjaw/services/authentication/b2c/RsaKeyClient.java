@@ -12,7 +12,6 @@ import static org.springframework.http.HttpMethod.POST;
 
 /**
  * Created by Keith Hoopes on 2/25/2016.
- * Copyright Bear River Mutual 2016.
  * <p/>
  * Provides methods for retrieving and updating the RSA keys for the configured Azure policies.
  */
