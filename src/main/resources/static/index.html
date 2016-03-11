@@ -11,10 +11,17 @@
 
 </head>
 <body ng-app="app" ng-controller="home as home">
-<h1>Login</h1>
+<h1></h1>
 <div class="container" ng-show="!home.authenticated">
     <div>
-        With Azure B2C: <a href="/login/azure">click here</a>
+        <h2><a href="/login/azure">
+            Login
+        </a></h2>
+    </div>
+    <div>
+        <h2><a href="/signup/azure">
+            Create Account
+        </a></h2>
     </div>
 </div>
 <div class="container" ng-show="home.authenticated">

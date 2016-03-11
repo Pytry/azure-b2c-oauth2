@@ -71,6 +71,7 @@ import java.util.*;
 /**
  * Created by Keith Hoopes on 2/1/2016.
  *
+ * Security Configuration
  */
 @RestController
 @Configuration
@@ -94,24 +95,25 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-
+        //@formatter:off
         http
-                .authorizeRequests()
-                    .antMatchers("/", "/login**","/webjars/**").permitAll()
-                    .antMatchers("/**").authenticated()
-                .and()
-                    .exceptionHandling()
-                        .authenticationEntryPoint(
-                                new LoginUrlAuthenticationEntryPoint("/"))
-                .and()
-                    .logout()
-                        .logoutSuccessUrl("/").permitAll()
-                .and()
-                    .csrf()
-                        .csrfTokenRepository(csrfTokenRepository())
-                .and()
-                    .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
-                    .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
+            .authorizeRequests()
+                .antMatchers("/", "/login**","/webjars/**","/signup/azure").permitAll()
+                .antMatchers("/**").authenticated()
+            .and()
+                .exceptionHandling()
+                    .authenticationEntryPoint(
+                            new LoginUrlAuthenticationEntryPoint("/"))
+            .and()
+                .logout()
+                    .logoutSuccessUrl("/").permitAll()
+            .and()
+                .csrf()
+                    .csrfTokenRepository(csrfTokenRepository())
+            .and()
+                .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
+                .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
+        //@formatter:on
     }
 
     @Override
@@ -271,8 +273,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private RsaKeyCachingService rsaKeyCachingService;
 
-    @Bean(name="inMemoryUserDetailsManager")
-    public InMemoryUserDetailsManager inMemoryUserDetailsManager(){
+    @Bean(name = "inMemoryUserDetailsManager")
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
 
         return new InMemoryUserDetailsManager(Collections.<UserDetails>emptyList());
     }
@@ -284,7 +286,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         InMemoryUserDetailsManager inMemoryUserDetailsManager = inMemoryUserDetailsManager();
 
-        AoidJwtAccessTokenConverter jwtTokenEnhancer = new AoidJwtAccessTokenConverter(rsaKeyCachingService,inMemoryUserDetailsManager, customerResourceDetails());
+        AoidJwtAccessTokenConverter jwtTokenEnhancer = new AoidJwtAccessTokenConverter(rsaKeyCachingService, inMemoryUserDetailsManager, customerResourceDetails());
         jwtTokenEnhancer.afterPropertiesSet();
 
         DefaultAccessTokenConverter tokenConverter = new DefaultAccessTokenConverter();
@@ -302,9 +304,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         AccessTokenProvider accessTokenProvider = accessTokenProvider();
         azureTemplate.setAccessTokenProvider(accessTokenProvider);
 
-        Map<String,ClientDetails> detailsMap = new HashMap<>();
+        Map<String, ClientDetails> detailsMap = new HashMap<>();
         ClientDetails clientDetails = clientDetails();
-        detailsMap.put(clientDetails.getClientId(),clientDetails);
+        detailsMap.put(clientDetails.getClientId(), clientDetails);
 
         InMemoryClientDetailsService clientDetailsService = new InMemoryClientDetailsService();
         clientDetailsService.setClientDetailsStore(detailsMap);

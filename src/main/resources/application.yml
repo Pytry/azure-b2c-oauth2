@@ -47,6 +47,7 @@ azure:
     scope: openid
     token-name: id_token
     user-authorization-uri: https://login.microsoftonline.com/yourcustomer.onmicrosoft.com/oauth2/v2.0/authorize?p=${azure.policy.signin-policy}
+    user-account-signup-uri: https://login.microsoftonline.com/yourcustomer.onmicrosoft.com/oauth2/v2.0/authorize?p=${azure.policy.signup-policy}
     authentication-scheme: query
     redirect-url: https://localhost:8443/login/azure
     response_mode: form_post
