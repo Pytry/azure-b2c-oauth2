@@ -119,8 +119,8 @@ public class RsaKeyCachingService {
         for (RsaKeyB2C key : b2cKeyList) {
 
             String kid = key.getKid();
-            BigInteger modulus = new BigInteger(key.getN().getBytes());
-            BigInteger publicExponent = new BigInteger(key.getE().getBytes());
+            BigInteger modulus = new BigInteger(key.getNDecoded());
+            BigInteger publicExponent = new BigInteger(key.getEDecoded());
             RsaVerifier rsaVerifier = new RsaVerifier(modulus, publicExponent);
 
             verifierCache.put(kid, rsaVerifier);
