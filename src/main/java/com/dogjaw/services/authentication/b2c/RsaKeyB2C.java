@@ -53,6 +53,10 @@ public class RsaKeyB2C {
     public void setE(String e) {
         this.e = e;
     }
+    
+    public byte[] getEDecoded() {
+        return Base64.getUrlDecoder().decode(this.e);
+    }
 
     public String getN() {
         return n;
@@ -60,5 +64,9 @@ public class RsaKeyB2C {
 
     public void setN(String n) {
         this.n = n;
+    }
+    
+    public byte[] getNDecoded() {
+        return Base64.getUrlDecoder().decode(this.n);
     }
 }
