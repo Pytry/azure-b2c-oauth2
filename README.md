@@ -1,5 +1,10 @@
 ###General
 
+Please see https://github.com/Pytry/xitikit-blue for the new updated API and examples.
+Even though the main API development has been moved to a new repository, commits and pull-request for this repository are still appreciated; it is better to have as many examples as possible.
+
+# Overview
+
 This project is based of off the Spring Tutorial for using OAuth2.
 
     https://spring.io/guides/tutorials/spring-boot-oauth2/
@@ -12,7 +17,7 @@ clientId, and clientSecret for AzureAD B2C.
 ###Notice
 The authentication and userdetails loading should now work.
 HOWEVER, there are a few things I have not done/fixed yet. 
-- RSA verification is not being done. Any help on this is appreciated.
+- ~~RSA verification is not being done. Any help on this is appreciated.~~
 - Token validation should be implemented (see the OpenId Connect link below).
 
 
