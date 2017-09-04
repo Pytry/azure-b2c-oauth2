@@ -1,7 +1,12 @@
 ###General
 
-Please see https://github.com/Pytry/xitikit-blue for the new updated API and examples.
-Even though the main API development has been moved to a new repository, commits and pull-request for this repository are still appreciated; it is better to have as many examples as possible.
+This is just a sample, and a bad one at that.
+
+Please see https://github.com/Xitikit/xitikit-blue for the new updated API and examples (which also need lots of work, but are much better thanks to several great developers).
+
+Even though the main API development has been moved to a new repository, I am keeping this repository active for the purpose of providing examples. Commits and pull-request for this repository are appreciated.
+
+It is better to have as many examples as possible, so if you have some examples you have worked on, please send me a link.
 
 # Overview
 
